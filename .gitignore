@@ -1,1 +1,5 @@
 lib
+.vscode
+compile.bat
+compile
+lcsfw.jar
