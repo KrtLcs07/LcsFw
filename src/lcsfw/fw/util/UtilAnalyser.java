@@ -44,6 +44,7 @@ public class UtilAnalyser {
             }
         } else {
             System.out.println("directory tsy miexiste");
+            throw new ClassNotFoundException("directory tsy miexiste");
         }
         return retour;
     }
