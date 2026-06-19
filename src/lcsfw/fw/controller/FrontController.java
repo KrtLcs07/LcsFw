@@ -15,10 +15,11 @@ import lcsfw.fw.util.ScanAnnotation;
 public class FrontController extends HttpServlet {
 
     List<Class<?>> classes;
+    
     @Override
     public void init() throws ServletException {
         try {
-            classes = ScanAnnotation.getClassesWithAnnoation(Controller.class, "controller");
+            classes = ScanAnnotation.getClassesWithAnnotation(Controller.class, "");
         } catch (ClassNotFoundException | URISyntaxException e) {
             e.printStackTrace();
             throw new ServletException( "Erreur (LcsFw): " + e);
