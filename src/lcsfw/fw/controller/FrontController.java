@@ -3,6 +3,7 @@ package lcsfw.fw.controller;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
@@ -29,9 +30,15 @@ public class FrontController extends HttpServlet {
         if (classes.isEmpty()) {
             return;
         }
+        mapping = new HashMap<>();
 
         for (Class<?> class1 : classes) {
-            ScanAnnotation.getMethodesWithAnnotation(, class1)
+            List<Method> methods =  ScanAnnotation.getMethodesWithAnnotation(URLMAPPING_ANNOTATION, class1);
+            for (Method method : methods) {
+                UrlMapping url = (UrlMapping) method.getAnnotation(URLMAPPING_ANNOTATION);
+
+                mapping.put(url.value(), new Mapping(class1,method));
+            }
         }
     }
 
@@ -58,8 +65,7 @@ public class FrontController extends HttpServlet {
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("text/plain");
         PrintWriter out = resp.getWriter();
-        out.println("Framweork de Lucas (LCSFW) fonctionnel");
-        out.println("Les classes annotées sont :");
+        out.println("Framework de Lucas (LCSFW)");
 
         for (Class<?> class1 : classes) {
             out.println("- " + class1.getName());
