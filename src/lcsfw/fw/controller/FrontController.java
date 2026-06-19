@@ -22,22 +22,21 @@ public class FrontController extends HttpServlet {
     private static final Class<? extends Annotation> CONTROLLER_ANNOTATION = Controller.class;
     private static final Class<? extends Annotation> URLMAPPING_ANNOTATION = UrlMapping.class;
 
-
-    List<Class<?>> classes;
+    List<Class<?>> classesController;
     HashMap<String, Mapping> mapping;
 
-    protected void initMapping(){
-        if (classes.isEmpty()) {
+    protected void initMapping() {
+        if (classesController.isEmpty()) {
             return;
         }
         mapping = new HashMap<>();
 
-        for (Class<?> class1 : classes) {
-            List<Method> methods =  ScanAnnotation.getMethodesWithAnnotation(URLMAPPING_ANNOTATION, class1);
+        for (Class<?> class1 : classesController) {
+            List<Method> methods = ScanAnnotation.getMethodesWithAnnotation(URLMAPPING_ANNOTATION, class1);
             for (Method method : methods) {
                 UrlMapping url = (UrlMapping) method.getAnnotation(URLMAPPING_ANNOTATION);
 
-                mapping.put(url.value(), new Mapping(class1,method));
+                mapping.put(url.value(), new Mapping(class1, method));
             }
         }
     }
@@ -45,13 +44,14 @@ public class FrontController extends HttpServlet {
     @Override
     public void init() throws ServletException {
         try {
-            classes = ScanAnnotation.getClassesWithAnnotation(CONTROLLER_ANNOTATION, "");
+            classesController = ScanAnnotation.getClassesWithAnnotation(CONTROLLER_ANNOTATION, "");
             initMapping();
         } catch (ClassNotFoundException | URISyntaxException e) {
             e.printStackTrace();
-            throw new ServletException( "Erreur (LcsFw): " + e);
+            throw new ServletException("Erreur (LcsFw): " + e);
         }
     }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         processRequest(req, resp);
@@ -67,8 +67,21 @@ public class FrontController extends HttpServlet {
         PrintWriter out = resp.getWriter();
         out.println("Framework de Lucas (LCSFW)");
 
-        for (Class<?> class1 : classes) {
-            out.println("- " + class1.getName());
+        String askUrl = req.getServletPath();
+        Mapping map = mapping.get(askUrl);
+        if (map != null) {
+            out.println("Url existe :");
+            out.println(askUrl + " --> " + map.getClass().getSimpleName() + " | " + map.getMethod().getName());
+        }
+
+        else {
+            out.println("Url Introuvable, voici ceux qui existe :");
+            for (String url : mapping.keySet()) {
+                Mapping nMap = mapping.get(url);
+
+                out.println( url + " --> " + nMap.getClass().getSimpleName() + " | " + nMap.getMethod().getName());
+
+            }
         }
 
     }
