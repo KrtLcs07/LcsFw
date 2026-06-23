@@ -21,11 +21,12 @@ public class FrontController extends HttpServlet {
 
     private static final Class<? extends Annotation> CONTROLLER_ANNOTATION = Controller.class;
     private static final Class<? extends Annotation> URLMAPPING_ANNOTATION = UrlMapping.class;
+    
 
     List<Class<?>> classesController;
     HashMap<String, Mapping> mapping;
 
-    protected void initMapping() {
+    protected void initMapping() throws Exception {
         if (classesController.isEmpty()) {
             return;
         }
@@ -35,7 +36,9 @@ public class FrontController extends HttpServlet {
             List<Method> methods = ScanAnnotation.getMethodesWithAnnotation(URLMAPPING_ANNOTATION, class1);
             for (Method method : methods) {
                 UrlMapping url = (UrlMapping) method.getAnnotation(URLMAPPING_ANNOTATION);
-
+                if (mapping.get(url.value()) != null) {
+                 throw new Exception("Doublure de url");
+                }
                 mapping.put(url.value(), new Mapping(class1, method));
             }
         }
@@ -46,10 +49,10 @@ public class FrontController extends HttpServlet {
         try {
             classesController = ScanAnnotation.getClassesWithAnnotation(CONTROLLER_ANNOTATION, "");
             initMapping();
-        } catch (ClassNotFoundException | URISyntaxException e) {
+        } catch (Exception e ) {
             e.printStackTrace();
             throw new ServletException("Erreur (LcsFw): " + e);
-        }
+        } 
     }
 
     @Override
@@ -67,7 +70,11 @@ public class FrontController extends HttpServlet {
         PrintWriter out = resp.getWriter();
         out.println("Framework de Lucas (LCSFW)");
 
-        String askUrl = req.getServletPath();
+        String askUrl = req.getRequestURI();
+        String contextPath = req.getContextPath();
+
+        askUrl = askUrl.substring(contextPath.length());
+        out.println(askUrl);
         Mapping map = mapping.get(askUrl);
         if (map != null) {
             out.println("Url existe :");
@@ -79,7 +86,7 @@ public class FrontController extends HttpServlet {
             for (String url : mapping.keySet()) {
                 Mapping nMap = mapping.get(url);
 
-                out.println( url + " --> " + nMap.getClass().getSimpleName() + " | " + nMap.getMethod().getName());
+                out.println(url + " --> " + nMap.getClass().getSimpleName() + " | " + nMap.getMethod().getName());
 
             }
         }
