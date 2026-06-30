@@ -5,7 +5,6 @@ import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -40,7 +39,7 @@ public class FrontController extends HttpServlet {
                 UrlMapping urlAnnotation = (UrlMapping) method.getAnnotation(URLMAPPING_ANNOTATION);
 
                 UrlMethode urlMethode = new UrlMethode(urlAnnotation.url(), urlAnnotation.method());
-                if (mapping.get(urlMethode) != null) {
+                if (mapping.containsKey(urlMethode)) {
                     throw new Exception("Il y a 2 url avec le même methode");
                 }
                 mapping.put(urlMethode, new Mapping(class1, method));
@@ -86,6 +85,8 @@ public class FrontController extends HttpServlet {
         out.println(urlMethode.getUrl());
         out.println(urlMethode.getMethode());
         out.println(urlMethode.hashCode());
+
+        
         Mapping map = mapping.get(urlMethode);
         if (map != null) {
             Class<?> class1 = map.getControllerClass();
