@@ -23,7 +23,7 @@ public class FrontControllerListner implements ServletContextListener {
     public void contextInitialized(ServletContextEvent sce) {
         ServletContext context = sce.getServletContext();
         String packageController = context.getInitParameter("controller-package");
-        if (packageController.isEmpty() || packageController == null) {
+        if (packageController == null || packageController.isEmpty()) {
             packageController = "";
         }
 
