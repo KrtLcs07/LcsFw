@@ -86,7 +86,7 @@ public class FrontController extends HttpServlet {
             Class<?> class1 = map.getControllerClass();
             Method method = map.getMethod();
             out.println("Url existe :");
-            out.println(askUrl + " --> " + map.getClass().getSimpleName() + " | " + method.getName());
+            out.println(askUrl + " ("+ method+") --> " + map.getClass().getSimpleName() + " | " + method.getName());
             out.println("Execution de la methode demandé.... ");
 
             try {

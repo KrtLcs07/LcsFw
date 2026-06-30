@@ -11,9 +11,19 @@ public class UrlMethode {
         this.methode = methode;
     }
 
-    @Override
+   @Override
     public boolean equals(Object obj) {
-        return this.url.equals(obj);
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null || this.getClass() != obj.getClass()) {
+            return false;
+        }
+
+        UrlMethode toCompare = (UrlMethode) obj;
+
+        return this.url.equals(toCompare.getUrl()) && this.methode.equals(toCompare.getMethode());
     }
     public String getUrl() {
         return url;
