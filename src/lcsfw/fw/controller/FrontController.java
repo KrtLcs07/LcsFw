@@ -3,6 +3,7 @@ package lcsfw.fw.controller;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -14,17 +15,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lcsfw.fw.annotation.Controller;
 import lcsfw.fw.annotation.UrlMapping;
+import lcsfw.fw.http.HttpMethode;
 import lcsfw.fw.mapping.Mapping;
+import lcsfw.fw.mapping.UrlMethode;
 import lcsfw.fw.util.ScanAnnotation;
 
 public class FrontController extends HttpServlet {
 
     private static final Class<? extends Annotation> CONTROLLER_ANNOTATION = Controller.class;
     private static final Class<? extends Annotation> URLMAPPING_ANNOTATION = UrlMapping.class;
-    
 
     List<Class<?>> classesController;
-    HashMap<String, Mapping> mapping;
+    HashMap<UrlMethode, Mapping> mapping;
 
     protected void initMapping() throws Exception {
         if (classesController.isEmpty()) {
@@ -35,11 +37,13 @@ public class FrontController extends HttpServlet {
         for (Class<?> class1 : classesController) {
             List<Method> methods = ScanAnnotation.getMethodesWithAnnotation(URLMAPPING_ANNOTATION, class1);
             for (Method method : methods) {
-                UrlMapping url = (UrlMapping) method.getAnnotation(URLMAPPING_ANNOTATION);
-                if (mapping.get(url.value()) != null) {
-                 throw new Exception("Doublure de url");
+                UrlMapping urlAnnotation = (UrlMapping) method.getAnnotation(URLMAPPING_ANNOTATION);
+
+                UrlMethode urlMethode = new UrlMethode(urlAnnotation.url(), urlAnnotation.method());
+                if (mapping.get(urlMethode) != null) {
+                    throw new Exception("Il y a 2 url avec le même methode");
                 }
-                mapping.put(url.value(), new Mapping(class1, method));
+                mapping.put(urlMethode, new Mapping(class1, method));
             }
         }
     }
@@ -49,10 +53,10 @@ public class FrontController extends HttpServlet {
         try {
             classesController = ScanAnnotation.getClassesWithAnnotation(CONTROLLER_ANNOTATION, "");
             initMapping();
-        } catch (Exception e ) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new ServletException("Erreur (LcsFw): " + e);
-        } 
+        }
     }
 
     @Override
@@ -75,18 +79,46 @@ public class FrontController extends HttpServlet {
 
         askUrl = askUrl.substring(contextPath.length());
         out.println(askUrl);
-        Mapping map = mapping.get(askUrl);
+        HttpMethode methode = HttpMethode.valueOf(req.getMethod());
+        UrlMethode urlMethode = new UrlMethode(askUrl, methode);
+
+        out.println("Recherche :");
+        out.println(urlMethode.getUrl());
+        out.println(urlMethode.getMethode());
+        out.println(urlMethode.hashCode());
+        Mapping map = mapping.get(urlMethode);
         if (map != null) {
+            Class<?> class1 = map.getControllerClass();
+            Method method = map.getMethod();
             out.println("Url existe :");
-            out.println(askUrl + " --> " + map.getClass().getSimpleName() + " | " + map.getMethod().getName());
+            out.println(askUrl + " (" + method + ") --> " + map.getClass().getSimpleName() + " | " + method.getName());
+            out.println("Execution de la methode demandé.... ");
+
+            try {
+                Object obj = class1.getDeclaredConstructor().newInstance();
+                Object result = method.invoke(obj);
+
+                if (result != null) {
+                    out.println(result.toString());
+                } else {
+                    out.println("La méthode a bien été executé");
+                }
+                
+            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                    | InvocationTargetException | NoSuchMethodException e) {
+                e.printStackTrace();
+                throw new ServletException("Erreur (LcsFw) :" + e);
+            }
+
         }
 
         else {
             out.println("Url Introuvable, voici ceux qui existe :");
-            for (String url : mapping.keySet()) {
+            for (UrlMethode url : mapping.keySet()) {
                 Mapping nMap = mapping.get(url);
 
-                out.println(url + " --> " + nMap.getClass().getSimpleName() + " | " + nMap.getMethod().getName());
+                out.println(
+                        url.getUrl() + " --> " + nMap.getClass().getSimpleName() + " | " + nMap.getMethod().getName());
 
             }
         }
