@@ -1,5 +1,7 @@
 package lcsfw.fw.mapping;
 
+import java.util.Objects;
+
 import lcsfw.fw.http.HttpMethode;
 
 public class UrlMethode {
@@ -11,7 +13,7 @@ public class UrlMethode {
         this.methode = methode;
     }
 
-   @Override
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -25,6 +27,12 @@ public class UrlMethode {
 
         return this.url.equals(toCompare.getUrl()) && this.methode.equals(toCompare.getMethode());
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url, methode);
+    }
+
     public String getUrl() {
         return url;
     }

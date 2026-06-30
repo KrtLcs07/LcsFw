@@ -81,17 +81,29 @@ public class FrontController extends HttpServlet {
         out.println(askUrl);
         HttpMethode methode = HttpMethode.valueOf(req.getMethod());
         UrlMethode urlMethode = new UrlMethode(askUrl, methode);
+
+        out.println("Recherche :");
+        out.println(urlMethode.getUrl());
+        out.println(urlMethode.getMethode());
+        out.println(urlMethode.hashCode());
         Mapping map = mapping.get(urlMethode);
         if (map != null) {
             Class<?> class1 = map.getControllerClass();
             Method method = map.getMethod();
             out.println("Url existe :");
-            out.println(askUrl + " ("+ method+") --> " + map.getClass().getSimpleName() + " | " + method.getName());
+            out.println(askUrl + " (" + method + ") --> " + map.getClass().getSimpleName() + " | " + method.getName());
             out.println("Execution de la methode demandé.... ");
 
             try {
                 Object obj = class1.getDeclaredConstructor().newInstance();
-                method.invoke(obj);
+                Object result = method.invoke(obj);
+
+                if (result != null) {
+                    out.println(result.toString());
+                } else {
+                    out.println("La méthode a bien été executé");
+                }
+                
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
                     | InvocationTargetException | NoSuchMethodException e) {
                 e.printStackTrace();
