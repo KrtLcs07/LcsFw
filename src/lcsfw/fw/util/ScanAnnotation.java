@@ -44,7 +44,7 @@ public class ScanAnnotation {
         return getClassesWithAnnotation(annotationClass, "");
     }
 
-    public void generateMap(HashMap<UrlMethode, Mapping> mapping, Class<? extends Annotation> annotationController,
+    public static void generateMap(HashMap<UrlMethode, Mapping> mapping, Class<? extends Annotation> annotationController,
             Class<? extends Annotation> annotationMapping, String packagee) throws Exception {
         for (Class<?> class1 : UtilAnalyser.getClasses(packagee)) {
             if (class1.isAnnotationPresent(annotationController)) {
