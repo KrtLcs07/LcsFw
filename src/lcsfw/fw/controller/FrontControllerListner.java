@@ -20,6 +20,8 @@ public class FrontControllerListner implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         ServletContext context = sce.getServletContext();
+
+        System.out.println("Test hoe mandeha......");
         String packageController = context.getInitParameter("controller-package");
         if (packageController == null || packageController.isEmpty()) {
             packageController = "";

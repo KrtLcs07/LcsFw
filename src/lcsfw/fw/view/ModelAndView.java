@@ -21,4 +21,8 @@ public class ModelAndView {
     public void setView(String view) {
         this.view = view;
     }
+
+    public Map<String, Object> getData() {
+        return data;
+    }
 }
