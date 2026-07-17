@@ -39,6 +39,7 @@ public class FrontController extends HttpServlet {
 
         String prefix = context.getInitParameter("view-prefix");
         String sufix = context.getInitParameter("view-suffix");
+        Object springContext = context.getAttribute("springContext");
 
 
         @SuppressWarnings("unchecked")
@@ -74,7 +75,17 @@ public class FrontController extends HttpServlet {
 
             try {
                 Object obj = class1.getDeclaredConstructor().newInstance();
-                ModelAndView result = (ModelAndView) method.invoke(obj);
+
+                ModelAndView result;
+                if (springContext != null) {
+                    if (method.getParameterCount() == 0) {
+                        result = (ModelAndView) method.invoke(obj);
+                    } else {
+                        result = (ModelAndView) method.invoke(obj, springContext);
+                    }
+                } else {
+                    result = (ModelAndView) method.invoke(obj);
+                }
 
                 if (result != null) {
                     out.println(result.toString());
