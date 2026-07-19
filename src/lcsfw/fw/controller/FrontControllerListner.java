@@ -17,12 +17,17 @@ public class FrontControllerListner implements ServletContextListener {
     private static final Class<? extends Annotation> CONTROLLER_ANNOTATION = Controller.class;
     private static final Class<? extends Annotation> URLMAPPING_ANNOTATION = UrlMapping.class;
 
+    private static final String PACKAGE_CONTROLLER_PARAM = "controller-package";
+    private static final String MAPPING_ATTRIBUTE = "mapping";
+
+    private static final String SPRING_ROOT = "org.springframework.web.context.WebApplicationContext.ROOT";
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         ServletContext context = sce.getServletContext();
 
         System.out.println("Test hoe mandeha......");
-        String packageController = context.getInitParameter("controller-package");
+        String packageController = context.getInitParameter(PACKAGE_CONTROLLER_PARAM);
         if (packageController == null || packageController.isEmpty()) {
             packageController = "";
         }
@@ -31,12 +36,12 @@ public class FrontControllerListner implements ServletContextListener {
 
         try {
             ScanAnnotation.generateMap(mapping, CONTROLLER_ANNOTATION, URLMAPPING_ANNOTATION, packageController);
-            ;
-            context.setAttribute("mapping", mapping);
+            context.setAttribute(MAPPING_ATTRIBUTE, mapping);
         } catch (Exception e) {
             System.out.println("Erreur (LcsFw):");
             e.printStackTrace();
         }
+        context.setAttribute("springContext", context.getAttribute(SPRING_ROOT));
     }
 
 }

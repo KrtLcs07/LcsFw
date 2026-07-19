@@ -7,16 +7,18 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.web.context.WebApplicationContext;
+
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lcsfw.fw.annotation.UrlMapping;
 import lcsfw.fw.http.HttpMethode;
 import lcsfw.fw.mapping.Mapping;
 import lcsfw.fw.mapping.UrlMethode;
+import lcsfw.fw.util.Util;
 import lcsfw.fw.view.ModelAndView;
 
 public class FrontController extends HttpServlet {
@@ -40,6 +42,7 @@ public class FrontController extends HttpServlet {
 
         String prefix = context.getInitParameter("view-prefix");
         String sufix = context.getInitParameter("view-suffix");
+        Object springContext = context.getAttribute("springContext");
 
 
         @SuppressWarnings("unchecked")
@@ -75,7 +78,16 @@ public class FrontController extends HttpServlet {
 
             try {
                 Object obj = class1.getDeclaredConstructor().newInstance();
-                ModelAndView result = (ModelAndView) method.invoke(obj);
+
+                ModelAndView result;
+                if (Util.haveParameter(method, WebApplicationContext.class)) {
+                    if (springContext == null) {
+                        throw new ServletException("Le contexte spring n'as pas été trouvé");
+                    }
+                    result = (ModelAndView) method.invoke(obj, (WebApplicationContext) springContext);
+                } else {
+                    result = (ModelAndView) method.invoke(obj);
+                }
 
                 if (result != null) {
                     out.println(result.toString());
