@@ -7,6 +7,8 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.web.context.WebApplicationContext;
+
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
@@ -16,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lcsfw.fw.http.HttpMethode;
 import lcsfw.fw.mapping.Mapping;
 import lcsfw.fw.mapping.UrlMethode;
+import lcsfw.fw.util.Util;
 import lcsfw.fw.view.ModelAndView;
 
 public class FrontController extends HttpServlet {
@@ -77,12 +80,11 @@ public class FrontController extends HttpServlet {
                 Object obj = class1.getDeclaredConstructor().newInstance();
 
                 ModelAndView result;
-                if (springContext != null) {
-                    if (method.getParameterCount() == 0) {
-                        result = (ModelAndView) method.invoke(obj);
-                    } else {
-                        result = (ModelAndView) method.invoke(obj, springContext);
+                if (Util.haveParameter(method, WebApplicationContext.class)) {
+                    if (springContext == null) {
+                        throw new ServletException("Le contexte spring n'as pas été trouvé");
                     }
+                    result = (ModelAndView) method.invoke(obj, (WebApplicationContext) springContext);
                 } else {
                     result = (ModelAndView) method.invoke(obj);
                 }
