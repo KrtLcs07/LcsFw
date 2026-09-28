@@ -1,6 +1,7 @@
 lib
 .vscode
 compile.bat
+compile.sh
 compile
 lcsfw.jar
 todo.md
