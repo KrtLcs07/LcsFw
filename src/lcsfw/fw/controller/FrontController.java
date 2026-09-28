@@ -15,6 +15,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lcsfw.fw.annotation.ApiREST;
 import lcsfw.fw.http.HttpMethode;
 import lcsfw.fw.mapping.Mapping;
 import lcsfw.fw.mapping.UrlMethode;
@@ -44,7 +45,6 @@ public class FrontController extends HttpServlet {
         String sufix = context.getInitParameter("view-suffix");
         Object springContext = context.getAttribute("springContext");
 
-
         @SuppressWarnings("unchecked")
         HashMap<UrlMethode, Mapping> mapping = (HashMap<UrlMethode, Mapping>) context.getAttribute("mapping");
         out.println(mapping);
@@ -72,29 +72,49 @@ public class FrontController extends HttpServlet {
             out.println("Url existe :");
             out.println(askUrl + " (" + method + ") --> " + map.getClass().getSimpleName() + " | " + method.getName());
             out.println("Execution de la methode demandé.... ");
-            if (method.getReturnType() != ModelAndView.class) {
+
+            Class<?> returnType = method.getReturnType();
+            if (returnType != ModelAndView.class
+                    || (returnType == String.class && method.isAnnotationPresent(ApiREST.class))) {
                 throw new ServletException("La methode " + method + " n'as pas de type de retour valide");
             }
-
             try {
                 Object obj = class1.getDeclaredConstructor().newInstance();
 
-                ModelAndView result;
+                Object resultRetour;
                 if (Util.haveParameter(method, WebApplicationContext.class)) {
                     if (springContext == null) {
                         throw new ServletException("Le contexte spring n'as pas été trouvé");
                     }
-                    result = (ModelAndView) method.invoke(obj, (WebApplicationContext) springContext);
+                    resultRetour = method.invoke(obj, (WebApplicationContext) springContext);
                 } else {
-                    result = (ModelAndView) method.invoke(obj);
+                    resultRetour = method.invoke(obj);
                 }
 
-                if (result != null) {
-                    out.println(result.toString());
-                    addArgToRequest(req, result.getData());
-                    String path =   "/" + prefix + "/" + result.getView() + "." + sufix; 
-                    RequestDispatcher dispat = req.getRequestDispatcher(path);
-                    dispat.forward(req, resp);
+                if (resultRetour != null) {
+                    out.println(resultRetour.toString());
+                    if (returnType == ModelAndView.class) {
+
+                        ModelAndView retour = (ModelAndView) resultRetour;
+                        addArgToRequest(req, retour.getData());
+                        String path = "/" + prefix + "/" + retour.getView() + "." + sufix;
+                        RequestDispatcher dispat = req.getRequestDispatcher(path);
+                        dispat.forward(req, resp);
+                    } else if (returnType == String.class) {
+                        if (resultRetour instanceof String) {
+                            String retour = (String) resultRetour;
+                            out.println(retour);
+                            resp.setContentType("application/json");
+                            resp.getWriter().write(retour);
+                        } else {
+                            String json = Util.toJSON(resultRetour);
+                            out.println(json);
+                            resp.setContentType("application/json");
+                            resp.getWriter().write(json);
+
+                        }
+                    }
+
                 } else {
                     throw new ServletException("Le model envoyé est null");
 
