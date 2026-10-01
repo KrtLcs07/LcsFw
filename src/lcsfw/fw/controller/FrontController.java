@@ -8,8 +8,6 @@ import java.lang.reflect.Parameter;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.web.context.WebApplicationContext;
-
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
@@ -86,11 +84,18 @@ public class FrontController extends HttpServlet {
                 Object obj = class1.getDeclaredConstructor().newInstance();
 
                 Object resultRetour;
-                if (Util.haveParameter(method, WebApplicationContext.class)) {
+                boolean hasSpringContextParameter = false;
+                for (Parameter parameter : a) {
+                    if (parameter.getType().getName().equals("org.springframework.web.context.WebApplicationContext")) {
+                        hasSpringContextParameter = true;
+                        break;
+                    }
+                }
+                if (hasSpringContextParameter) {
                     if (springContext == null) {
                         throw new ServletException("Le contexte spring n'as pas été trouvé");
                     }
-                    resultRetour = method.invoke(obj, (WebApplicationContext) springContext);
+                    resultRetour = method.invoke(obj, springContext);
                 } else {
                     resultRetour = method.invoke(obj);
                 }
