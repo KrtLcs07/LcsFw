@@ -27,7 +27,7 @@ public class Util {
                     || value instanceof Float && !Float.isFinite((Float) value)) {
                 throw new IllegalArgumentException("NaN et Infinity ne sont pas des valeurs JSON valides");
             }
-            json.append(value);
+            json.append(value); 
         } else {
             if (ancestors.put(value, Boolean.TRUE) != null) {
                 throw new IllegalArgumentException("Référence cyclique impossible à sérialiser en JSON");
