@@ -4,10 +4,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.springframework.web.context.WebApplicationContext;
 
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletContext;
@@ -15,6 +14,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lcsfw.fw.annotation.ApiREST;
 import lcsfw.fw.http.HttpMethode;
 import lcsfw.fw.mapping.Mapping;
 import lcsfw.fw.mapping.UrlMethode;
@@ -34,69 +34,84 @@ public class FrontController extends HttpServlet {
     }
 
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("text/plain");
-        PrintWriter out = resp.getWriter();
-        out.println("Framework de Lucas (LCSFW)");
-
         ServletContext context = req.getServletContext();
 
         String prefix = context.getInitParameter("view-prefix");
         String sufix = context.getInitParameter("view-suffix");
         Object springContext = context.getAttribute("springContext");
 
-
         @SuppressWarnings("unchecked")
         HashMap<UrlMethode, Mapping> mapping = (HashMap<UrlMethode, Mapping>) context.getAttribute("mapping");
-        out.println(mapping);
+        // out.println(mapping);
         if (mapping == null) {
-            out.println("Mapping introuvable");
+            resp.setContentType("text/plain;charset=UTF-8");
+            resp.getWriter().println("Mapping introuvable");
             return;
         }
         String askUrl = req.getRequestURI();
         String contextPath = req.getContextPath();
 
         askUrl = askUrl.substring(contextPath.length());
-        out.println(askUrl);
+        // out.println(askUrl);
         HttpMethode methode = HttpMethode.valueOf(req.getMethod());
         UrlMethode urlMethode = new UrlMethode(askUrl, methode);
-
-        out.println("Recherche :");
-        out.println(urlMethode.getUrl());
-        out.println(urlMethode.getMethode());
-        out.println(urlMethode.hashCode());
 
         Mapping map = mapping.get(urlMethode);
         if (map != null) {
             Class<?> class1 = map.getControllerClass();
             Method method = map.getMethod();
-            out.println("Url existe :");
-            out.println(askUrl + " (" + method + ") --> " + map.getClass().getSimpleName() + " | " + method.getName());
-            out.println("Execution de la methode demandé.... ");
-            if (method.getReturnType() != ModelAndView.class) {
+            // out.println("Url existe :");
+            // out.println(askUrl + " (" + method + ") --> " +
+            // map.getClass().getSimpleName() + " | " + method.getName());
+            // out.println("Execution de la methode demandé.... ");
+            Parameter[] a = method.getParameters();
+
+            Class<?> returnType = method.getReturnType();
+            if (returnType != ModelAndView.class && !method.isAnnotationPresent(ApiREST.class)) {
                 throw new ServletException("La methode " + method + " n'as pas de type de retour valide");
             }
-
             try {
                 Object obj = class1.getDeclaredConstructor().newInstance();
 
-                ModelAndView result;
-                if (Util.haveParameter(method, WebApplicationContext.class)) {
+                Object resultRetour;
+                boolean hasSpringContextParameter = false;
+                for (Parameter parameter : a) {
+                    if (parameter.getType().getName().equals("org.springframework.web.context.WebApplicationContext")) {
+                        hasSpringContextParameter = true;
+                        break;
+                    }
+                }
+                if (hasSpringContextParameter) {
                     if (springContext == null) {
                         throw new ServletException("Le contexte spring n'as pas été trouvé");
                     }
-                    result = (ModelAndView) method.invoke(obj, (WebApplicationContext) springContext);
+                    resultRetour = method.invoke(obj, springContext);
                 } else {
-                    result = (ModelAndView) method.invoke(obj);
+                    resultRetour = method.invoke(obj);
                 }
 
-                if (result != null) {
-                    out.println(result.toString());
-                    addArgToRequest(req, result.getData());
-                    String path =   "/" + prefix + "/" + result.getView() + "." + sufix; 
-                    RequestDispatcher dispat = req.getRequestDispatcher(path);
-                    dispat.forward(req, resp);
+                if (resultRetour != null) {
+                    // out.println(resultRetour.toString());
+                    if (returnType == ModelAndView.class) {
+
+                        ModelAndView retour = (ModelAndView) resultRetour;
+                        addArgToRequest(req, retour.getData());
+                        String path = "/" + prefix + "/" + retour.getView() + "." + sufix;
+                        RequestDispatcher dispat = req.getRequestDispatcher(path);
+                        dispat.forward(req, resp);
+                    } else {
+                        resp.setContentType("application/json;charset=UTF-8");
+                        if (resultRetour instanceof String) {
+                            String retour = (String) resultRetour;
+                            resp.getWriter().write(retour);
+                        } else {
+                            String json = Util.toJSON(resultRetour);
+                            resp.getWriter().write(json);
+                        }
+                    }
+
                 } else {
-                    throw new ServletException("Le model envoyé est null");
+                    throw new ServletException("Le retour envoyé est null");
 
                 }
 
@@ -109,6 +124,14 @@ public class FrontController extends HttpServlet {
         }
 
         else {
+            resp.setContentType("text/plain;charset=UTF-8");
+            PrintWriter out = resp.getWriter();
+            out.println("Framework de Lucas (LCSFW)");
+
+            out.println("Recherche :");
+            out.println(urlMethode.getUrl());
+            out.println(urlMethode.getMethode());
+            out.println(urlMethode.hashCode());
             out.println("Url Introuvable, voici ceux qui existe :");
             for (UrlMethode url : mapping.keySet()) {
                 Mapping nMap = mapping.get(url);

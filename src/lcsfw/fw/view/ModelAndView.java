@@ -1,5 +1,6 @@
 package lcsfw.fw.view;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class ModelAndView {
@@ -12,6 +13,7 @@ public class ModelAndView {
 
     public ModelAndView(String view) {
         this.view = view;
+        this.data = new HashMap<>();
     }
 
     public String getView() {
