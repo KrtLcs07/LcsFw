@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,6 +61,8 @@ public class FrontController extends HttpServlet {
         HttpMethode methode = HttpMethode.valueOf(req.getMethod());
         UrlMethode urlMethode = new UrlMethode(askUrl, methode);
 
+        
+
         out.println("Recherche :");
         out.println(urlMethode.getUrl());
         out.println(urlMethode.getMethode());
@@ -72,10 +75,11 @@ public class FrontController extends HttpServlet {
             out.println("Url existe :");
             out.println(askUrl + " (" + method + ") --> " + map.getClass().getSimpleName() + " | " + method.getName());
             out.println("Execution de la methode demandé.... ");
+            Parameter[] a = method.getParameters();
+                
 
             Class<?> returnType = method.getReturnType();
-            if (returnType != ModelAndView.class
-                    || (returnType == String.class && method.isAnnotationPresent(ApiREST.class))) {
+            if (returnType != ModelAndView.class && !method.isAnnotationPresent(ApiREST.class)) {
                 throw new ServletException("La methode " + method + " n'as pas de type de retour valide");
             }
             try {
