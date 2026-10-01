@@ -34,9 +34,6 @@ public class FrontController extends HttpServlet {
     }
 
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("text/plain");
-        PrintWriter out = resp.getWriter();
-
         ServletContext context = req.getServletContext();
 
         String prefix = context.getInitParameter("view-prefix");
@@ -47,7 +44,8 @@ public class FrontController extends HttpServlet {
         HashMap<UrlMethode, Mapping> mapping = (HashMap<UrlMethode, Mapping>) context.getAttribute("mapping");
         // out.println(mapping);
         if (mapping == null) {
-            out.println("Mapping introuvable");
+            resp.setContentType("text/plain;charset=UTF-8");
+            resp.getWriter().println("Mapping introuvable");
             return;
         }
         String askUrl = req.getRequestURI();
@@ -102,17 +100,13 @@ public class FrontController extends HttpServlet {
                         RequestDispatcher dispat = req.getRequestDispatcher(path);
                         dispat.forward(req, resp);
                     } else {
+                        resp.setContentType("application/json;charset=UTF-8");
                         if (resultRetour instanceof String) {
                             String retour = (String) resultRetour;
-                            // out.println(retour);
-                            resp.setContentType("application/json");
-                            out.write(retour);
+                            resp.getWriter().write(retour);
                         } else {
                             String json = Util.toJSON(resultRetour);
-                            // out.println(json);
-                            resp.setContentType("application/json");
-                            out.write(json);
-
+                            resp.getWriter().write(json);
                         }
                     }
 
@@ -130,6 +124,8 @@ public class FrontController extends HttpServlet {
         }
 
         else {
+            resp.setContentType("text/plain;charset=UTF-8");
+            PrintWriter out = resp.getWriter();
             out.println("Framework de Lucas (LCSFW)");
 
             out.println("Recherche :");
