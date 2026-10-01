@@ -36,7 +36,6 @@ public class FrontController extends HttpServlet {
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("text/plain");
         PrintWriter out = resp.getWriter();
-        out.println("Framework de Lucas (LCSFW)");
 
         ServletContext context = req.getServletContext();
 
@@ -46,7 +45,7 @@ public class FrontController extends HttpServlet {
 
         @SuppressWarnings("unchecked")
         HashMap<UrlMethode, Mapping> mapping = (HashMap<UrlMethode, Mapping>) context.getAttribute("mapping");
-        out.println(mapping);
+        // out.println(mapping);
         if (mapping == null) {
             out.println("Mapping introuvable");
             return;
@@ -55,26 +54,19 @@ public class FrontController extends HttpServlet {
         String contextPath = req.getContextPath();
 
         askUrl = askUrl.substring(contextPath.length());
-        out.println(askUrl);
+        // out.println(askUrl);
         HttpMethode methode = HttpMethode.valueOf(req.getMethod());
         UrlMethode urlMethode = new UrlMethode(askUrl, methode);
-
-        
-
-        out.println("Recherche :");
-        out.println(urlMethode.getUrl());
-        out.println(urlMethode.getMethode());
-        out.println(urlMethode.hashCode());
 
         Mapping map = mapping.get(urlMethode);
         if (map != null) {
             Class<?> class1 = map.getControllerClass();
             Method method = map.getMethod();
-            out.println("Url existe :");
-            out.println(askUrl + " (" + method + ") --> " + map.getClass().getSimpleName() + " | " + method.getName());
-            out.println("Execution de la methode demandé.... ");
+            // out.println("Url existe :");
+            // out.println(askUrl + " (" + method + ") --> " +
+            // map.getClass().getSimpleName() + " | " + method.getName());
+            // out.println("Execution de la methode demandé.... ");
             Parameter[] a = method.getParameters();
-                
 
             Class<?> returnType = method.getReturnType();
             if (returnType != ModelAndView.class && !method.isAnnotationPresent(ApiREST.class)) {
@@ -101,7 +93,7 @@ public class FrontController extends HttpServlet {
                 }
 
                 if (resultRetour != null) {
-                    out.println(resultRetour.toString());
+                    // out.println(resultRetour.toString());
                     if (returnType == ModelAndView.class) {
 
                         ModelAndView retour = (ModelAndView) resultRetour;
@@ -109,23 +101,23 @@ public class FrontController extends HttpServlet {
                         String path = "/" + prefix + "/" + retour.getView() + "." + sufix;
                         RequestDispatcher dispat = req.getRequestDispatcher(path);
                         dispat.forward(req, resp);
-                    } else if (returnType == String.class) {
+                    } else {
                         if (resultRetour instanceof String) {
                             String retour = (String) resultRetour;
-                            out.println(retour);
+                            // out.println(retour);
                             resp.setContentType("application/json");
-                            resp.getWriter().write(retour);
+                            out.write(retour);
                         } else {
                             String json = Util.toJSON(resultRetour);
-                            out.println(json);
+                            // out.println(json);
                             resp.setContentType("application/json");
-                            resp.getWriter().write(json);
+                            out.write(json);
 
                         }
                     }
 
                 } else {
-                    throw new ServletException("Le model envoyé est null");
+                    throw new ServletException("Le retour envoyé est null");
 
                 }
 
@@ -138,6 +130,12 @@ public class FrontController extends HttpServlet {
         }
 
         else {
+            out.println("Framework de Lucas (LCSFW)");
+
+            out.println("Recherche :");
+            out.println(urlMethode.getUrl());
+            out.println(urlMethode.getMethode());
+            out.println(urlMethode.hashCode());
             out.println("Url Introuvable, voici ceux qui existe :");
             for (UrlMethode url : mapping.keySet()) {
                 Mapping nMap = mapping.get(url);
