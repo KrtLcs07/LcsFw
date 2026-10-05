@@ -18,6 +18,7 @@ import lcsfw.fw.annotation.ApiREST;
 import lcsfw.fw.http.HttpMethode;
 import lcsfw.fw.mapping.Mapping;
 import lcsfw.fw.mapping.UrlMethode;
+import lcsfw.fw.util.JsonUtil;
 import lcsfw.fw.util.Util;
 import lcsfw.fw.view.ModelAndView;
 
@@ -64,7 +65,7 @@ public class FrontController extends HttpServlet {
             // out.println(askUrl + " (" + method + ") --> " +
             // map.getClass().getSimpleName() + " | " + method.getName());
             // out.println("Execution de la methode demandé.... ");
-            Parameter[] a = method.getParameters();
+            Parameter[] parametres = method.getParameters();
 
             Class<?> returnType = method.getReturnType();
             if (returnType != ModelAndView.class && !method.isAnnotationPresent(ApiREST.class)) {
@@ -73,26 +74,36 @@ public class FrontController extends HttpServlet {
             try {
                 Object obj = class1.getDeclaredConstructor().newInstance();
 
-                Object resultRetour;
-                boolean hasSpringContextParameter = false;
-                for (Parameter parameter : a) {
-                    if (parameter.getType().getName().equals("org.springframework.web.context.WebApplicationContext")) {
-                        hasSpringContextParameter = true;
-                        break;
-                    }
-                }
-                if (hasSpringContextParameter) {
-                    if (springContext == null) {
-                        throw new ServletException("Le contexte spring n'as pas été trouvé");
-                    }
-                    resultRetour = method.invoke(obj, springContext);
-                } else {
+                Object resultRetour = null;
+                if (parametres.length == 0) {
                     resultRetour = method.invoke(obj);
+                } else {
+                    Object[] args = new Object[parametres.length];
+                    for (int i = 0; i < parametres.length; i++) {
+                        Parameter parameter = parametres[i];
+                        String paramName = parameter.getName();
+                        String paramValue = req.getParameter(paramName);
+
+                        if (paramValue == null && Util.isSpringParameter(parameter)) {
+                            throw new ServletException("Le parametre " + paramName + " est manquant");
+                        }
+                        Class<?> paramType = parameter.getType();
+                        if (paramType.getName().equals("org.springframework.web.context.WebApplicationContext")) {
+                            if (springContext == null) {
+                                throw new ServletException("Le contexte spring n'as pas été trouvé");
+                            }
+                            args[i] = springContext;
+                        } else {
+                            Object convertedValue = Util.convertString(paramValue, paramType);
+                            args[i] = convertedValue;
+                        }
+                    }
+                    resultRetour = method.invoke(obj, args);
                 }
 
                 if (resultRetour != null) {
                     // out.println(resultRetour.toString());
-                    if (returnType == ModelAndView.class) {
+                    if (returnType == ModelAndView.class && !method.isAnnotationPresent(ApiREST.class)) {
 
                         ModelAndView retour = (ModelAndView) resultRetour;
                         addArgToRequest(req, retour.getData());
@@ -105,7 +116,7 @@ public class FrontController extends HttpServlet {
                             String retour = (String) resultRetour;
                             resp.getWriter().write(retour);
                         } else {
-                            String json = Util.toJSON(resultRetour);
+                            String json = JsonUtil.toJSON(resultRetour);
                             resp.getWriter().write(json);
                         }
                     }
@@ -123,7 +134,9 @@ public class FrontController extends HttpServlet {
 
         }
 
-        else {
+        else
+
+        {
             resp.setContentType("text/plain;charset=UTF-8");
             PrintWriter out = resp.getWriter();
             out.println("Framework de Lucas (LCSFW)");
@@ -135,7 +148,6 @@ public class FrontController extends HttpServlet {
             out.println("Url Introuvable, voici ceux qui existe :");
             for (UrlMethode url : mapping.keySet()) {
                 Mapping nMap = mapping.get(url);
-
                 out.println(
                         url.getUrl() + " --> " + nMap.getClass().getSimpleName() + " | " + nMap.getMethod().getName());
 
@@ -150,5 +162,7 @@ public class FrontController extends HttpServlet {
             req.setAttribute(argument, value);
         }
     }
+
+    
 
 }
