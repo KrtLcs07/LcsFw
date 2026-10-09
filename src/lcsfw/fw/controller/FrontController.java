@@ -2,6 +2,7 @@ package lcsfw.fw.controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -16,6 +17,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lcsfw.fw.annotation.ApiREST;
+import lcsfw.fw.annotation.param.ObjectParam;
+import lcsfw.fw.annotation.param.RequestParam;
 import lcsfw.fw.http.HttpMethode;
 import lcsfw.fw.mapping.Mapping;
 import lcsfw.fw.mapping.UrlMethode;
@@ -24,6 +27,9 @@ import lcsfw.fw.util.Util;
 import lcsfw.fw.view.ModelAndView;
 
 public class FrontController extends HttpServlet {
+
+    private static final Class<? extends Annotation> REQUESTPARAM_ANNOTATION = RequestParam.class;
+    private static final Class<? extends Annotation> OBJECTPARAM_ANNOTATION = ObjectParam.class;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -84,35 +90,64 @@ public class FrontController extends HttpServlet {
                         Parameter parameter = parametres[i];
                         Class<?> paramType = parameter.getType();
 
-                        if (Util.isStandartType(paramType)) {
+                        if (parameter.isAnnotationPresent(REQUESTPARAM_ANNOTATION)
+                                && parameter.isAnnotationPresent(OBJECTPARAM_ANNOTATION)) {
+                            throw new ServletException("Le parametre " + parameter.getName()
+                                    + " ne peut pas avoir les deux annotations @RequestParam et @ObjetcParam");
+                        }
+                        if (!parameter.isAnnotationPresent(REQUESTPARAM_ANNOTATION)
+                                || !parameter.isAnnotationPresent(OBJECTPARAM_ANNOTATION)
+                                || Util.isSpringParameter(parameter)) {
+                            throw new ServletException("Le parametre " + parameter.getName()
+                                    + " doit avoir l'annotation @RequestParam ou @ObjetcParam");
+                        }
 
-                            String paramName = parameter.getName();
+                        if (Util.isStandartType(paramType) && parameter.isAnnotationPresent(REQUESTPARAM_ANNOTATION)) {
+
+                            RequestParam requestParamAnnotation = (RequestParam) parameter
+                                    .getAnnotation(REQUESTPARAM_ANNOTATION);
+                            String paramName = requestParamAnnotation.name();
+                            if (paramName.isEmpty()) {
+                                paramName = parameter.getName();
+                            }
                             String paramValue = req.getParameter(paramName);
-                            if (paramValue == null && !Util.isSpringParameter(parameter)) {
+                            if (paramValue == null && requestParamAnnotation.required()) {
                                 throw new ServletException("Le parametre " + paramName + " est manquant");
                             }
-                            Object convertedValue = Util.convertString(paramValue, paramType);
+                            Object convertedValue = Util.convertOrDefault(paramValue, paramType);
                             args[i] = convertedValue;
 
-                        } else if (paramType.getName()
-                                .equals("org.springframework.web.context.WebApplicationContext")) {
+                        } else if (Util.isSpringParameter(parameter)) {
                             if (springContext == null) {
                                 throw new ServletException("Le contexte spring n'as pas été trouvé");
                             }
                             args[i] = springContext;
                         } else {
                             Object paramObject = paramType.getDeclaredConstructor().newInstance();
-                            Field[] paramObjectParams = paramType.getDeclaredFields();
-                            for (Field field : paramObjectParams) {
-                                field.setAccessible(true);
-                                String fieldName = field.getName();
-                                String fieldValue = req.getParameter(fieldName);
-                                if (fieldValue != null) {
-                                    Object convertedValue = Util.convertString(fieldValue, field.getType());
-                                    field.set(paramObject, convertedValue);
+
+                            ObjectParam objectParamAnnotation = (ObjectParam) parameter
+                                    .getAnnotation(OBJECTPARAM_ANNOTATION);
+                            if (objectParamAnnotation != null) {
+                                String name = objectParamAnnotation.name();
+                                String link = objectParamAnnotation.link();
+                                if (name.isEmpty()) {
+                                    throw new ServletException("Le parametre " + parameter.getName()
+                                            + " doit avoir un nom dans l'annotation @ObjectParam");
+                                }
+                                if (link.isEmpty()) {
+                                    throw new ServletException("Le parametre " + parameter.getName()
+                                            + " doit avoir un lien dans l'annotation @ObjectParam");
+                                }
+
+                                try {
+                                    fillObjectAttribute(paramObject, req, link, name);
+                                    args[i] = paramObject;
+
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    throw new ServletException(e.getMessage());
                                 }
                             }
-                            args[i] = paramObject;
                         }
                     }
                     resultRetour = method.invoke(obj, args);
@@ -171,6 +206,27 @@ public class FrontController extends HttpServlet {
             }
         }
 
+    }
+
+    private void fillObjectAttribute(Object obj, HttpServletRequest req, String link, String debut)
+            throws Exception {
+        Field[] fields = obj.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            field.setAccessible(true);
+            if (!Util.isStandartType(field.getType())) {
+                Object fieldValue = field.getType().getDeclaredConstructor().newInstance();
+                fillObjectAttribute(fieldValue, req, link, debut + link + field.getName());
+                field.set(obj, fieldValue);
+            } else {
+                String fieldName = field.getName();
+                String paramName = debut + link + fieldName;
+                String fieldValue = req.getParameter(paramName);
+                if (fieldValue != null) {
+                    Object convertedValue = Util.convertString(fieldValue, field.getType());
+                    field.set(obj, convertedValue);
+                }
+            }
+        }
     }
 
     private void addArgToRequest(HttpServletRequest req, Map<String, Object> data) {

@@ -8,8 +8,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-public @interface ObjetcParam {
+public @interface ObjectParam {
     String name() default "";
-    boolean required() default false;
     String link() default ".";
 }

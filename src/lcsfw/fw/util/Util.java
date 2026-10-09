@@ -11,6 +11,24 @@ public class Util {
         return  parametre.getClass().getTypeName().equals("org.springframework.web.context.WebApplicationContext");
     }
 
+    public static Object convertOrDefault(String string, Class<?> targetType){
+        
+        if (string == null) {
+            if (targetType.isPrimitive()) {
+                if (targetType == boolean.class) {
+                    return false;
+                } else if (targetType == char.class) {
+                    return '\u0000';
+                } else {
+                    return 0;
+                }
+            } else {
+                return null;
+            }
+        }
+        return convertString(string, targetType);
+    }
+
     public static Object convertString(String string, Class<?> targetType) {
         if (targetType == String.class) {
             return string;
