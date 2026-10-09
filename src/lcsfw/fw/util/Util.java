@@ -1,11 +1,32 @@
 package lcsfw.fw.util;
 
 import java.lang.reflect.Parameter;
+import java.sql.Date;
+import java.util.Collection;
+import java.util.Map;
 
 public class Util {
 
     public static boolean isSpringParameter(Parameter parametre){
         return  parametre.getClass().getTypeName().equals("org.springframework.web.context.WebApplicationContext");
+    }
+
+    public static Object convertOrDefault(String string, Class<?> targetType){
+        
+        if (string == null) {
+            if (targetType.isPrimitive()) {
+                if (targetType == boolean.class) {
+                    return false;
+                } else if (targetType == char.class) {
+                    return '\u0000';
+                } else {
+                    return 0;
+                }
+            } else {
+                return null;
+            }
+        }
+        return convertString(string, targetType);
     }
 
     public static Object convertString(String string, Class<?> targetType) {
@@ -33,4 +54,29 @@ public class Util {
         }
         throw new IllegalArgumentException("Unsupported target type: " + targetType.getName());
     }
+
+public static boolean isStandartType(Class<?> clazz) {
+    if (clazz == null) {
+        return false;
+    }
+
+
+    if (clazz.isPrimitive() || clazz.getName().startsWith("java.lang.")) {
+        return true;
+    }
+
+    if (clazz.getName().startsWith("java.util.") || 
+        clazz == Collection.class || 
+        clazz == Map.class || 
+        clazz == Date.class) {
+        return true;
+    }
+
+    if (clazz.isArray() || clazz.isEnum()) {
+        return true;
+    }
+
+    return false;
+}
+
 }
