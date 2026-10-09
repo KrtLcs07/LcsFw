@@ -1,6 +1,9 @@
 package lcsfw.fw.util;
 
 import java.lang.reflect.Parameter;
+import java.sql.Date;
+import java.util.Collection;
+import java.util.Map;
 
 public class Util {
 
@@ -33,4 +36,29 @@ public class Util {
         }
         throw new IllegalArgumentException("Unsupported target type: " + targetType.getName());
     }
+
+public static boolean isStandartType(Class<?> clazz) {
+    if (clazz == null) {
+        return false;
+    }
+
+
+    if (clazz.isPrimitive() || clazz.getName().startsWith("java.lang.")) {
+        return true;
+    }
+
+    if (clazz.getName().startsWith("java.util.") || 
+        clazz == Collection.class || 
+        clazz == Map.class || 
+        clazz == Date.class) {
+        return true;
+    }
+
+    if (clazz.isArray() || clazz.isEnum()) {
+        return true;
+    }
+
+    return false;
+}
+
 }

@@ -2,6 +2,7 @@ package lcsfw.fw.controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -81,21 +82,37 @@ public class FrontController extends HttpServlet {
                     Object[] args = new Object[parametres.length];
                     for (int i = 0; i < parametres.length; i++) {
                         Parameter parameter = parametres[i];
-                        String paramName = parameter.getName();
-                        String paramValue = req.getParameter(paramName);
-
-                        if (paramValue == null && Util.isSpringParameter(parameter)) {
-                            throw new ServletException("Le parametre " + paramName + " est manquant");
-                        }
                         Class<?> paramType = parameter.getType();
-                        if (paramType.getName().equals("org.springframework.web.context.WebApplicationContext")) {
+
+                        if (Util.isStandartType(paramType)) {
+
+                            String paramName = parameter.getName();
+                            String paramValue = req.getParameter(paramName);
+                            if (paramValue == null && !Util.isSpringParameter(parameter)) {
+                                throw new ServletException("Le parametre " + paramName + " est manquant");
+                            }
+                            Object convertedValue = Util.convertString(paramValue, paramType);
+                            args[i] = convertedValue;
+
+                        } else if (paramType.getName()
+                                .equals("org.springframework.web.context.WebApplicationContext")) {
                             if (springContext == null) {
                                 throw new ServletException("Le contexte spring n'as pas été trouvé");
                             }
                             args[i] = springContext;
                         } else {
-                            Object convertedValue = Util.convertString(paramValue, paramType);
-                            args[i] = convertedValue;
+                            Object paramObject = paramType.getDeclaredConstructor().newInstance();
+                            Field[] paramObjectParams = paramType.getDeclaredFields();
+                            for (Field field : paramObjectParams) {
+                                field.setAccessible(true);
+                                String fieldName = field.getName();
+                                String fieldValue = req.getParameter(fieldName);
+                                if (fieldValue != null) {
+                                    Object convertedValue = Util.convertString(fieldValue, field.getType());
+                                    field.set(paramObject, convertedValue);
+                                }
+                            }
+                            args[i] = paramObject;
                         }
                     }
                     resultRetour = method.invoke(obj, args);
@@ -162,7 +179,5 @@ public class FrontController extends HttpServlet {
             req.setAttribute(argument, value);
         }
     }
-
-    
 
 }

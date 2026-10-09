@@ -6,3 +6,4 @@ compile
 lcsfw.jar
 todo.md
 TOJSON.md
+deploy.sh
