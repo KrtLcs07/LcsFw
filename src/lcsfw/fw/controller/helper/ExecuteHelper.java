@@ -6,11 +6,15 @@ import java.lang.reflect.Parameter;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.Part;
 import lcsfw.fw.annotation.ApiREST;
 import lcsfw.fw.annotation.param.ObjectParam;
 import lcsfw.fw.annotation.param.RequestParam;
+import lcsfw.fw.file.Mapfile;
 import lcsfw.fw.util.Util;
 import lcsfw.fw.view.ModelAndView;
+
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 
 public class ExecuteHelper {
@@ -163,10 +167,14 @@ public class ExecuteHelper {
 
         try {
             Class<?> type = parameter.getType();
-            Object object = type.getDeclaredConstructor().newInstance();
+            Object object = null;
+            if (Mapfile.class.isAssignableFrom(type)) {
+                object = getUploadedFile(req, name);
+            } else {
+                object = type.getDeclaredConstructor().newInstance();
+                fillObjectAttribute(object, req, link, name);
 
-            fillObjectAttribute(object, req, link, name);
-
+            }
             return object;
 
         } catch (ReflectiveOperationException e) {
@@ -181,23 +189,33 @@ public class ExecuteHelper {
         }
     }
 
-    public static void fillObjectAttribute(
+    private static void fillObjectAttribute(
             Object obj, HttpServletRequest req, String link, String debut) throws Exception {
 
+        if (obj instanceof Mapfile) {
+            Part part = req.getPart(debut);
+            obj = Mapfile.fromPart(part);
+
+            return;
+        }
         Field[] fields = obj.getClass().getDeclaredFields();
 
         for (Field field : fields) {
             field.setAccessible(true);
-
+            String paramName = debut + link + field.getName();
+            if (Mapfile.class.isAssignableFrom(field.getType())) {
+                Mapfile mapfile = getUploadedFile(req, paramName);
+                field.set(obj, mapfile);
+                continue;
+            }
             if (!Util.isStandartType(field.getType())) {
                 Object fieldValue = field.getType().getDeclaredConstructor().newInstance();
 
-                fillObjectAttribute(fieldValue, req, link, debut + link + field.getName());
+                fillObjectAttribute(fieldValue, req, link, paramName);
 
                 field.set(obj, fieldValue);
 
             } else {
-                String paramName = debut + link + field.getName();
                 String value = req.getParameter(paramName);
 
                 if (value != null) {
@@ -208,4 +226,56 @@ public class ExecuteHelper {
             }
         }
     }
+
+    private static Mapfile getUploadedFile(
+            HttpServletRequest req,
+            String paramName) throws IOException, ServletException {
+
+        String contentType = req.getContentType();
+
+        if (contentType == null
+                || !contentType.toLowerCase(java.util.Locale.ROOT)
+                        .startsWith("multipart/form-data")) {
+
+            throw new ServletException(
+                    "LCSFW : impossible de récupérer le fichier '"
+                            + paramName + "' : la requête n'est pas multipart/form-data. "
+                            + "Vérifiez que le formulaire HTML utilise "
+                            + "enctype=\"multipart/form-data\".");
+        }
+
+        try {
+            Part part = req.getPart(paramName);
+
+            if (part == null) {
+                return null;
+            }
+
+            String filename = part.getSubmittedFileName();
+
+            if (filename == null || filename.isBlank()) {
+                return null;
+            }
+
+            return Mapfile.fromPart(part);
+
+        } catch (IllegalStateException e) {
+            throw new ServletException(
+                    "LCSFW : impossible de traiter le fichier '"
+                            + paramName + "'. Le servlet n'est peut-être pas configuré "
+                            + "pour le multipart, ou une limite de taille a été dépassée. "
+                            + "Vérifiez la configuration <multipart-config> du servlet "
+                            + "et les limites max-file-size et max-request-size.",
+                    e);
+
+        } catch (ServletException e) {
+            throw new ServletException(
+                    "LCSFW : erreur lors de la lecture du fichier '"
+                            + paramName + "'. Vérifiez que le servlet possède une "
+                            + "configuration multipart, que la requête est valide "
+                            + "et que les limites de taille sont respectées.",
+                    e);
+        }
+    }
+
 }

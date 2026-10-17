@@ -1,4 +1,4 @@
-package lcsfw.fw.util;
+package lcsfw.fw.util.json;
 
 import java.beans.IntrospectionException;
 import java.beans.Introspector;

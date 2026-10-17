@@ -7,7 +7,7 @@ import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lcsfw.fw.util.JsonUtil;
+import lcsfw.fw.util.json.JsonUtil;
 import lcsfw.fw.view.ModelAndView;
 
 public class ResponseHelper {
