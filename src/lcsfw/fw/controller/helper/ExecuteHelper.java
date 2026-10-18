@@ -192,12 +192,6 @@ public class ExecuteHelper {
     private static void fillObjectAttribute(
             Object obj, HttpServletRequest req, String link, String debut) throws Exception {
 
-        if (obj instanceof Mapfile) {
-            Part part = req.getPart(debut);
-            obj = Mapfile.fromPart(part);
-
-            return;
-        }
         Field[] fields = obj.getClass().getDeclaredFields();
 
         for (Field field : fields) {
