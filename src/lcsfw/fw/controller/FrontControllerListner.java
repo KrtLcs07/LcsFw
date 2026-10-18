@@ -8,6 +8,7 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import lcsfw.fw.annotation.Controller;
 import lcsfw.fw.annotation.UrlMapping;
+import lcsfw.fw.config.AppProperties;
 import lcsfw.fw.mapping.Mapping;
 import lcsfw.fw.mapping.UrlMethode;
 import lcsfw.fw.util.ScanAnnotation;
@@ -24,9 +25,16 @@ public class FrontControllerListner implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
+        try {
+            AppProperties.load("application.properties");
+
+            System.out.println("LCSFW : configuration chargée avec succès.");
+
+        } catch (Exception e) {
+            throw new IllegalStateException("LCSFW : lecture de application.properties impossible.", e);
+        }
         ServletContext context = sce.getServletContext();
 
-        System.out.println("Test hoe mandeha......");
         String packageController = context.getInitParameter(PACKAGE_CONTROLLER_PARAM);
         if (packageController == null || packageController.isEmpty()) {
             packageController = "";
@@ -38,7 +46,7 @@ public class FrontControllerListner implements ServletContextListener {
             ScanAnnotation.generateMap(mapping, CONTROLLER_ANNOTATION, URLMAPPING_ANNOTATION, packageController);
             context.setAttribute(MAPPING_ATTRIBUTE, mapping);
         } catch (Exception e) {
-            System.out.println("Erreur (LcsFw):");
+            System.out.println("Erreur (LcsFw): " + e.getMessage());
             e.printStackTrace();
         }
         context.setAttribute("springContext", context.getAttribute(SPRING_ROOT));
