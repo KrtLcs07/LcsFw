@@ -8,7 +8,7 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 import jakarta.servlet.http.Part;
-import lcsfw.fw.conf.AppProperties;
+import lcsfw.fw.config.AppProperties;
 
 public class Mapfile {
 

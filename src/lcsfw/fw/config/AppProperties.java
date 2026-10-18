@@ -1,4 +1,4 @@
-package lcsfw.fw.conf;
+package lcsfw.fw.config;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;

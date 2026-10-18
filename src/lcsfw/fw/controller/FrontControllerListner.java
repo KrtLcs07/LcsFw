@@ -8,7 +8,7 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import lcsfw.fw.annotation.Controller;
 import lcsfw.fw.annotation.UrlMapping;
-import lcsfw.fw.conf.AppProperties;
+import lcsfw.fw.config.AppProperties;
 import lcsfw.fw.mapping.Mapping;
 import lcsfw.fw.mapping.UrlMethode;
 import lcsfw.fw.util.ScanAnnotation;
