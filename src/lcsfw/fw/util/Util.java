@@ -8,7 +8,8 @@ import java.util.Map;
 public class Util {
 
     public static boolean isSpringParameter(Parameter parametre){
-        return  parametre.getClass().getTypeName().equals("org.springframework.web.context.WebApplicationContext");
+        return  parametre != null
+                && parametre.getType().getName().equals("org.springframework.web.context.WebApplicationContext");
     }
 
     public static Object convertOrDefault(String string, Class<?> targetType){
