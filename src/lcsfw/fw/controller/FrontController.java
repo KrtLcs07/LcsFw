@@ -10,6 +10,7 @@ import jakarta.servlet.http.*;
 import lcsfw.fw.annotation.*;
 import lcsfw.fw.controller.helper.*;
 import lcsfw.fw.http.methode.HttpMethode;
+import lcsfw.fw.http.session.LcsSession;
 import lcsfw.fw.mapping.*;
 import lcsfw.fw.view.ModelAndView;
 
@@ -75,6 +76,15 @@ public class FrontController extends HttpServlet {
             Object[] args = ExecuteHelper.resolveArguments(method, req, springContext);
 
             Object result = method.invoke(controller, args);
+
+            for (Object object : args) {
+                if (object instanceof LcsSession) {
+                    if (req.getSession(false) != null) {
+                        LcsSession lcsSession = (LcsSession) object;
+                        lcsSession.flush(req.getSession());
+                    }
+                }
+            }
 
             if (result == null) {
                 throw new ServletException(

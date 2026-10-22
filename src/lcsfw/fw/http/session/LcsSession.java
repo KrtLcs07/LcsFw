@@ -1,5 +1,7 @@
 package lcsfw.fw.http.session;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -8,24 +10,52 @@ import jakarta.servlet.http.HttpSession;
 public class LcsSession {
     private String id;
     private long lastAccessTime;
-    private Map<String, Object> attribute;
-    private Set<String> initialKeys;
 
-    public void fromHttpSession(HttpSession session) {
-        id = session.getId();
-        lastAccessTime = session.getLastAccessedTime();
+    private final Map<String, Object> attribute = new HashMap<>();
+    private final Set<String> initialKeys = new HashSet<>();
+
+    public static LcsSession fromHttpSession(HttpSession session) {
+        LcsSession lcsSession = new LcsSession();
+        lcsSession.id = session.getId();
+        lcsSession.lastAccessTime = session.getLastAccessedTime();
         session.getAttributeNames().asIterator().forEachRemaining(name -> {
-            attribute.put(name, session.getAttribute(name));
-            initialKeys.add(name);
+            lcsSession.attribute.put(name, session.getAttribute(name));
+            lcsSession.initialKeys.add(name);
         });
+        return lcsSession;
     }
 
-    public void flush(HttpSession session){
+    public void flush(HttpSession session) {
         for (String key : initialKeys) {
             session.removeAttribute(key);
         }
-        for (Map.Entry<String,Object> entry : attribute.entrySet()) {
+        for (Map.Entry<String, Object> entry : attribute.entrySet()) {
             session.setAttribute(entry.getKey(), entry.getValue());
         }
     }
+
+    public Object getAttribute(String name) {
+        return attribute.get(name);
+    }
+
+    public void setAttribute(String name, Object value) {
+        attribute.put(name, value);
+    }
+
+    public void removeAttribute(String name) {
+        attribute.remove(name);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public long getLastAccessTime() {
+        return lastAccessTime;
+    }
+
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
+    }
+
 }

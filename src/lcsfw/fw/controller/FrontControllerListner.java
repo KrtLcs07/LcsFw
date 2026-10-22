@@ -9,6 +9,7 @@ import jakarta.servlet.ServletContextListener;
 import lcsfw.fw.annotation.Controller;
 import lcsfw.fw.annotation.UrlMapping;
 import lcsfw.fw.config.AppProperties;
+import lcsfw.fw.http.session.LcsSession;
 import lcsfw.fw.mapping.Mapping;
 import lcsfw.fw.mapping.UrlMethode;
 import lcsfw.fw.util.ScanAnnotation;
@@ -50,6 +51,7 @@ public class FrontControllerListner implements ServletContextListener {
             e.printStackTrace();
         }
         context.setAttribute("springContext", context.getAttribute(SPRING_ROOT));
+        context.setAttribute("LcsSession", new LcsSession());
     }
 
 }
