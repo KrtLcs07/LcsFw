@@ -9,7 +9,7 @@ import jakarta.servlet.http.*;
 
 import lcsfw.fw.annotation.*;
 import lcsfw.fw.controller.helper.*;
-import lcsfw.fw.http.HttpMethode;
+import lcsfw.fw.http.methode.HttpMethode;
 import lcsfw.fw.mapping.*;
 import lcsfw.fw.view.ModelAndView;
 
