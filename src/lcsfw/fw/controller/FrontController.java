@@ -16,7 +16,6 @@ import lcsfw.fw.view.ModelAndView;
 
 public class FrontController extends HttpServlet {
 
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         processRequest(req, resp);
@@ -77,11 +76,12 @@ public class FrontController extends HttpServlet {
 
             Object result = method.invoke(controller, args);
 
-            for (Object object : args) {
-                if (object instanceof LcsSession) {
-                    if (req.getSession(false) != null) {
-                        LcsSession lcsSession = (LcsSession) object;
-                        lcsSession.flush(req.getSession());
+            HttpSession httpSession = req.getSession(false);
+
+            if (httpSession != null) {
+                for (Object object : args) {
+                    if (object instanceof LcsSession lcsSession) {
+                        lcsSession.flush(httpSession);
                     }
                 }
             }
@@ -130,7 +130,5 @@ public class FrontController extends HttpServlet {
                     e);
         }
     }
-
-
 
 }

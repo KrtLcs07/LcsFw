@@ -101,13 +101,6 @@ public class ExecuteHelper {
                                 + "ou @ObjectParam.");
             }
 
-            if (!parameter.getType().isInstance(springContext)) {
-                throw new ServletException(
-                        "LCSFW : le contexte Spring est de type " + springContext.getClass().getName()
-                                + ", incompatible avec le paramètre " + parameter.getName() + " de type "
-                                + parameter.getType().getName() + ".");
-            }
-
             return LcsSession.fromHttpSession(req.getSession(true));
         }
 
