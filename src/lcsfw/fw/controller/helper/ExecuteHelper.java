@@ -11,6 +11,7 @@ import lcsfw.fw.annotation.ApiREST;
 import lcsfw.fw.annotation.param.ObjectParam;
 import lcsfw.fw.annotation.param.RequestParam;
 import lcsfw.fw.file.Mapfile;
+import lcsfw.fw.http.session.LcsSession;
 import lcsfw.fw.util.Util;
 import lcsfw.fw.view.ModelAndView;
 
@@ -67,6 +68,8 @@ public class ExecuteHelper {
 
         boolean isSpringParam = Util.isSpringParameter(parameter);
 
+        boolean isSessionParam = parameter.getType().equals(LcsSession.class);
+
         if (hasRequestParam && hasObjectParam) {
             throw new ServletException(
                     "LCSFW : le paramètre " + parameter.getName() + " ne peut pas porter simultanément "
@@ -80,11 +83,6 @@ public class ExecuteHelper {
                                 + "ou @ObjectParam.");
             }
 
-            if (springContext == null) {
-                throw new ServletException(
-                        "LCSFW : le contexte Spring est absent. " + "Vérifiez sa configuration et l'attribut "
-                                + "'springContext' du ServletContext.");
-            }
 
             if (!parameter.getType().isInstance(springContext)) {
                 throw new ServletException(
@@ -94,6 +92,16 @@ public class ExecuteHelper {
             }
 
             return springContext;
+        }
+
+        if (isSessionParam) {
+            if (hasRequestParam || hasObjectParam) {
+                throw new ServletException(
+                        "LCSFW : le paramètre Session " + parameter.getName() + " ne doit pas porter @RequestParam "
+                                + "ou @ObjectParam.");
+            }
+
+            return LcsSession.fromHttpSession(req.getSession(true));
         }
 
         if (!hasRequestParam && !hasObjectParam) {

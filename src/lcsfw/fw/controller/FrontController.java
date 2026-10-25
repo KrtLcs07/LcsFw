@@ -9,12 +9,12 @@ import jakarta.servlet.http.*;
 
 import lcsfw.fw.annotation.*;
 import lcsfw.fw.controller.helper.*;
-import lcsfw.fw.http.HttpMethode;
+import lcsfw.fw.http.methode.HttpMethode;
+import lcsfw.fw.http.session.LcsSession;
 import lcsfw.fw.mapping.*;
 import lcsfw.fw.view.ModelAndView;
 
 public class FrontController extends HttpServlet {
-
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -76,6 +76,16 @@ public class FrontController extends HttpServlet {
 
             Object result = method.invoke(controller, args);
 
+            HttpSession httpSession = req.getSession(false);
+
+            if (httpSession != null) {
+                for (Object object : args) {
+                    if (object instanceof LcsSession lcsSession) {
+                        lcsSession.flush(httpSession);
+                    }
+                }
+            }
+
             if (result == null) {
                 throw new ServletException(
                         "LCSFW : la méthode " + controllerClass.getSimpleName() + "." + method.getName()
@@ -120,7 +130,5 @@ public class FrontController extends HttpServlet {
                     e);
         }
     }
-
-
 
 }

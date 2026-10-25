@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import lcsfw.fw.http.HttpMethode;
+import lcsfw.fw.http.methode.HttpMethode;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

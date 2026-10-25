@@ -2,7 +2,7 @@ package lcsfw.fw.mapping;
 
 import java.util.Objects;
 
-import lcsfw.fw.http.HttpMethode;
+import lcsfw.fw.http.methode.HttpMethode;
 
 public class UrlMethode {
     String url;
