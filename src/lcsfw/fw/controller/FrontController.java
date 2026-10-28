@@ -2,6 +2,7 @@ package lcsfw.fw.controller;
 
 import java.io.IOException;
 import java.lang.reflect.*;
+import java.util.Collection;
 import java.util.Map;
 
 import jakarta.servlet.*;
@@ -46,6 +47,10 @@ public class FrontController extends HttpServlet {
 
         if (route == null) {
             RouteHelper.handleNotFound(req, resp, mapping, cle);
+            return;
+        }
+
+        if (!checkAuthorization(req, resp, route, context)) {
             return;
         }
 
@@ -129,6 +134,73 @@ public class FrontController extends HttpServlet {
                             + "du contrôleur, ses paramètres et son accessibilité.",
                     e);
         }
+    }
+
+    private boolean checkAuthorization(
+            HttpServletRequest req,
+            HttpServletResponse resp,
+            Mapping route,
+            ServletContext context) throws ServletException, IOException {
+
+        Class<?> controllerClass = route.getControllerClass();
+        Method method = route.getMethod();
+
+        Auth auth = method.getAnnotation(Auth.class);
+
+        if (auth == null) {
+            auth = controllerClass.getAnnotation(Auth.class);
+        }
+
+        if (auth == null) {
+            return true;
+        }
+
+        String sessionRoleName = (String) context.getAttribute("lcsfw-session-role-name");
+
+        if (sessionRoleName == null || sessionRoleName.isBlank()) {
+            throw new ServletException(
+                    "LCSFW : le nom de l'attribut de rôle de session n'est pas "
+                            + "configuré dans le web.xml (lcsfw-session-role-name).");
+        }
+
+        HttpSession session = req.getSession(false);
+
+        if (session == null) {
+            ResponseHelper.handleUnauthorized(req, resp);
+            return false;
+        }
+
+        Object roleAttribute = session.getAttribute(sessionRoleName);
+
+        if (roleAttribute == null) {
+            ResponseHelper.handleUnauthorized(req, resp);
+            return false;
+        }
+
+        String requiredRole = auth.role();
+
+        if (requiredRole == null || requiredRole.isBlank()) {
+            return true;
+        }
+
+        if (roleAttribute instanceof String role) {
+            if (requiredRole.equals(role)) {
+                return true;
+            }
+        } else if (roleAttribute instanceof Collection<?> roles) {
+            for (Object role : roles) {
+                if (requiredRole.equals(role)) {
+                    return true;
+                }
+            }
+        } else {
+            throw new ServletException(
+                    "LCSFW : l'attribut de session '" + sessionRoleName
+                            + "' doit être une String ou une Collection de rôles.");
+        }
+
+        ResponseHelper.handleForbidden(req, resp);
+        return false;
     }
 
 }
