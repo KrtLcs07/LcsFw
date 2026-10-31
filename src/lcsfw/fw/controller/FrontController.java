@@ -78,7 +78,7 @@ public class FrontController extends HttpServlet {
         ExecuteHelper.validateReturnType(method);
 
         try {
-            Object controller = controllerClass.getDeclaredConstructor().newInstance();
+            Object controller = getControllerInstance(controllerClass, req.getServletContext());
 
             Object[] args = ExecuteHelper.resolveArguments(method, req, springContext);
 
