@@ -21,9 +21,10 @@ public class FrontControllerListner implements ServletContextListener {
 
     private static final String PACKAGE_CONTROLLER_PARAM = "controller-package";
     private static final String MAPPING_ATTRIBUTE = "mapping";
-    private static final String ROLE_ATTRIBUTE_NAME = "lcsfw-session-role-name";
 
     private static final String SPRING_ROOT = "org.springframework.web.context.WebApplicationContext.ROOT";
+
+    private static final String SESSION_USER_NAME = "lcsfw-session-user-name";
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -38,7 +39,6 @@ public class FrontControllerListner implements ServletContextListener {
         ServletContext context = sce.getServletContext();
 
         String packageController = context.getInitParameter(PACKAGE_CONTROLLER_PARAM);
-        String roleAttribute = context.getInitParameter(ROLE_ATTRIBUTE_NAME);
         if (packageController == null || packageController.isEmpty()) {
             packageController = "";
         }
@@ -53,8 +53,10 @@ public class FrontControllerListner implements ServletContextListener {
             e.printStackTrace();
         }
         context.setAttribute("springContext", context.getAttribute(SPRING_ROOT));
-        context.setAttribute("LcsSession", new LcsSession());
-        context.setAttribute("lcsfw-session-role-name", roleAttribute);
+
+        String userAttribute = context.getInitParameter(SESSION_USER_NAME);
+        context.setAttribute("lcsfw-session-user-name", userAttribute);
+
     }
 
 }

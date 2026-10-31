@@ -2,7 +2,10 @@ package lcsfw.fw.controller;
 
 import java.io.IOException;
 import java.lang.reflect.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.servlet.*;
@@ -155,12 +158,13 @@ public class FrontController extends HttpServlet {
             return true;
         }
 
-        String sessionRoleName = (String) context.getAttribute("lcsfw-session-role-name");
+        String sessionUserName = (String) context.getAttribute("lcsfw-session-user-name");
 
-        if (sessionRoleName == null || sessionRoleName.isBlank()) {
+        if (sessionUserName == null || sessionUserName.isBlank()) {
             throw new ServletException(
-                    "LCSFW : le nom de l'attribut de rôle de session n'est pas "
-                            + "configuré dans le web.xml (lcsfw-session-role-name).");
+                    "LCSFW : le nom de l'attribut utilisateur de session "
+                            + "n'est pas configuré dans le web.xml "
+                            + "(session-user-name).");
         }
 
         HttpSession session = req.getSession(false);
@@ -170,37 +174,14 @@ public class FrontController extends HttpServlet {
             return false;
         }
 
-        Object roleAttribute = session.getAttribute(sessionRoleName);
+        Object user = session.getAttribute(sessionUserName);
 
-        if (roleAttribute == null) {
+        if (user == null) {
             ResponseHelper.handleUnauthorized(req, resp);
             return false;
         }
 
-        String requiredRole = auth.role();
-
-        if (requiredRole == null || requiredRole.isBlank()) {
-            return true;
-        }
-
-        if (roleAttribute instanceof String role) {
-            if (requiredRole.equals(role)) {
-                return true;
-            }
-        } else if (roleAttribute instanceof Collection<?> roles) {
-            for (Object role : roles) {
-                if (requiredRole.equals(role)) {
-                    return true;
-                }
-            }
-        } else {
-            throw new ServletException(
-                    "LCSFW : l'attribut de session '" + sessionRoleName
-                            + "' doit être une String ou une Collection de rôles.");
-        }
-
-        ResponseHelper.handleForbidden(req, resp);
-        return false;
+        return true;
     }
 
 }
