@@ -2,7 +2,7 @@ package lcsfw.fw.controller;
 
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
@@ -10,7 +10,6 @@ import jakarta.servlet.ServletContextListener;
 import lcsfw.fw.annotation.Controller;
 import lcsfw.fw.annotation.UrlMapping;
 import lcsfw.fw.config.AppProperties;
-import lcsfw.fw.http.session.LcsSession;
 import lcsfw.fw.mapping.Mapping;
 import lcsfw.fw.mapping.UrlMethode;
 import lcsfw.fw.util.ScanAnnotation;
@@ -61,7 +60,7 @@ public class FrontControllerListner implements ServletContextListener {
         context.setAttribute("lcsfw-session-user-name", userAttribute);
         context.setAttribute("lcsfw-session-role-name", roleAttribute);
 
-        context.setAttribute("controllersInstance", new HashMap<Class<?>, Object>());
+        context.setAttribute("controllersInstance", new ConcurrentHashMap<Class<?>, Object>());
 
     }
 

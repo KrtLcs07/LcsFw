@@ -238,8 +238,9 @@ public class FrontController extends HttpServlet {
     }
 
     @SuppressWarnings("unchecked")
-    private Object getControllerInstance(Class<?> controllerClass, ServletContext context)
-            throws ReflectiveOperationException {
+    private Object getControllerInstance(
+            Class<?> controllerClass,
+            ServletContext context) throws ReflectiveOperationException {
 
         Map<Class<?>, Object> controllersInstance = (Map<Class<?>, Object>) context.getAttribute("controllersInstance");
 
@@ -251,8 +252,14 @@ public class FrontController extends HttpServlet {
         Object controller = controllersInstance.get(controllerClass);
 
         if (controller == null) {
-            controller = controllerClass.getDeclaredConstructor().newInstance();
-            controllersInstance.put(controllerClass, controller);
+            synchronized (controllersInstance) {
+                controller = controllersInstance.get(controllerClass);
+
+                if (controller == null) {
+                    controller = controllerClass.getDeclaredConstructor().newInstance();
+                    controllersInstance.put(controllerClass, controller);
+                }
+            }
         }
 
         return controller;
