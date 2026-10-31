@@ -72,4 +72,66 @@ public class ResponseHelper {
         }
     }
 
+    public static void handleUnauthorized(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+
+        handleAccessError(
+                req,
+                resp,
+                HttpServletResponse.SC_UNAUTHORIZED,
+                "unauthorized",
+                "Vous devez vous authentifier pour accéder à cette ressource.");
+    }
+
+    public static void handleForbidden(
+            HttpServletRequest req,
+            HttpServletResponse resp) throws IOException {
+
+        handleAccessError(
+                req,
+                resp,
+                HttpServletResponse.SC_FORBIDDEN,
+                "forbidden",
+                "Vous n'avez pas le rôle nécessaire pour accéder à cette ressource.");
+    }
+
+    private static void handleAccessError(HttpServletRequest req, HttpServletResponse resp, int status, String error,
+            String message) throws IOException {
+
+        if (resp.isCommitted()) {
+            return;
+        }
+
+        resp.reset();
+        resp.setStatus(status);
+        resp.setCharacterEncoding("UTF-8");
+
+        String accept = req.getHeader("Accept");
+
+        if (accept != null && accept.contains("application/json")) {
+            resp.setContentType("application/json");
+
+            resp.getWriter().write(
+                    "{\"error\":\"" + error + "\","
+                            + "\"status\":" + status + ","
+                            + "\"message\":\"" + message + "\"}");
+
+            return;
+        }
+
+        resp.setContentType("text/html");
+
+        resp.getWriter().write(
+                "<!DOCTYPE html>"
+                        + "<html lang=\"fr\">"
+                        + "<head><meta charset=\"UTF-8\">"
+                        + "<title>" + status + " - Accès refusé</title></head>"
+                        + "<body>"
+                        + "<h1>" + status + " - "
+                        + (status == HttpServletResponse.SC_UNAUTHORIZED
+                                ? "Authentification requise"
+                                : "Accès interdit")
+                        + "</h1>"
+                        + "<p>" + message + "</p>"
+                        + "</body></html>");
+    }
 }

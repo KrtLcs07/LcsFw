@@ -2,6 +2,10 @@ package lcsfw.fw.controller;
 
 import java.io.IOException;
 import java.lang.reflect.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.servlet.*;
@@ -46,6 +50,10 @@ public class FrontController extends HttpServlet {
 
         if (route == null) {
             RouteHelper.handleNotFound(req, resp, mapping, cle);
+            return;
+        }
+
+        if (!checkAuthorization(req, resp, route, context)) {
             return;
         }
 
@@ -129,6 +137,51 @@ public class FrontController extends HttpServlet {
                             + "du contrôleur, ses paramètres et son accessibilité.",
                     e);
         }
+    }
+
+    private boolean checkAuthorization(
+            HttpServletRequest req,
+            HttpServletResponse resp,
+            Mapping route,
+            ServletContext context) throws ServletException, IOException {
+
+        Class<?> controllerClass = route.getControllerClass();
+        Method method = route.getMethod();
+
+        Auth auth = method.getAnnotation(Auth.class);
+
+        if (auth == null) {
+            auth = controllerClass.getAnnotation(Auth.class);
+        }
+
+        if (auth == null) {
+            return true;
+        }
+
+        String sessionUserName = (String) context.getAttribute("lcsfw-session-user-name");
+
+        if (sessionUserName == null || sessionUserName.isBlank()) {
+            throw new ServletException(
+                    "LCSFW : le nom de l'attribut utilisateur de session "
+                            + "n'est pas configuré dans le web.xml "
+                            + "(session-user-name).");
+        }
+
+        HttpSession session = req.getSession(false);
+
+        if (session == null) {
+            ResponseHelper.handleUnauthorized(req, resp);
+            return false;
+        }
+
+        Object user = session.getAttribute(sessionUserName);
+
+        if (user == null) {
+            ResponseHelper.handleUnauthorized(req, resp);
+            return false;
+        }
+
+        return true;
     }
 
 }

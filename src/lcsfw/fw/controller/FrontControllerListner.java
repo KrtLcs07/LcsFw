@@ -24,6 +24,8 @@ public class FrontControllerListner implements ServletContextListener {
 
     private static final String SPRING_ROOT = "org.springframework.web.context.WebApplicationContext.ROOT";
 
+    private static final String SESSION_USER_NAME = "lcsfw-session-user-name";
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         try {
@@ -51,7 +53,10 @@ public class FrontControllerListner implements ServletContextListener {
             e.printStackTrace();
         }
         context.setAttribute("springContext", context.getAttribute(SPRING_ROOT));
-        context.setAttribute("LcsSession", new LcsSession());
+
+        String userAttribute = context.getInitParameter(SESSION_USER_NAME);
+        context.setAttribute("lcsfw-session-user-name", userAttribute);
+
     }
 
 }
