@@ -2,6 +2,7 @@ package lcsfw.fw.controller;
 
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
+import java.util.Map;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
@@ -64,4 +65,24 @@ public class FrontControllerListner implements ServletContextListener {
 
     }
 
+    @SuppressWarnings("unchecked")
+    private Object getControllerInstance(Class<?> controllerClass, ServletContext context)
+            throws ReflectiveOperationException {
+
+        Map<Class<?>, Object> controllersInstance = (Map<Class<?>, Object>) context.getAttribute("controllersInstance");
+
+        if (controllersInstance == null) {
+            throw new IllegalStateException(
+                    "LCSFW : la map 'controllersInstance' n'est pas initialisée.");
+        }
+
+        Object controller = controllersInstance.get(controllerClass);
+
+        if (controller == null) {
+            controller = controllerClass.getDeclaredConstructor().newInstance();
+            controllersInstance.put(controllerClass, controller);
+        }
+
+        return controller;
+    }
 }
