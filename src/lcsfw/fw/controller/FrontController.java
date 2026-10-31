@@ -181,7 +181,60 @@ public class FrontController extends HttpServlet {
             return false;
         }
 
-        return true;
+        String[] requiredRoles = auth.roles();
+
+        if (requiredRoles.length == 0) {
+            return true;
+        }
+
+        String sessionRoleName = (String) context.getAttribute("lcsfw-session-role-name");
+
+        if (sessionRoleName == null || sessionRoleName.isBlank()) {
+            throw new ServletException(
+                    "LCSFW : le nom de l'attribut de rôle de session "
+                            + "n'est pas configuré dans le web.xml "
+                            + "(session-role-name).");
+        }
+
+        Object roleAttribute = session.getAttribute(sessionRoleName);
+
+        if (roleAttribute == null) {
+            ResponseHelper.handleForbidden(req, resp);
+            return false;
+        }
+
+        List<String> requiredRoleList = Arrays.asList(requiredRoles);
+
+        if (roleAttribute instanceof String role) {
+            if (requiredRoleList.contains(role)) {
+                return true;
+            }
+
+        } else if (roleAttribute instanceof Collection<?> roles) {
+            for (Object role : roles) {
+                if (role instanceof String
+                        && requiredRoleList.contains(role)) {
+                    return true;
+                }
+            }
+
+        } else if (roleAttribute instanceof String[] roles) {
+            for (String role : roles) {
+                if (requiredRoleList.contains(role)) {
+                    return true;
+                }
+            }
+
+        } else {
+            throw new ServletException(
+                    "LCSFW : l'attribut de session '"
+                            + sessionRoleName
+                            + "' doit être une String, une Collection "
+                            + "ou un tableau de String.");
+        }
+
+        ResponseHelper.handleForbidden(req, resp);
+        return false;
     }
 
 }
