@@ -78,7 +78,7 @@ public class FrontController extends HttpServlet {
         ExecuteHelper.validateReturnType(method);
 
         try {
-            Object controller = controllerClass.getDeclaredConstructor().newInstance();
+            Object controller = getControllerInstance(controllerClass, req.getServletContext());
 
             Object[] args = ExecuteHelper.resolveArguments(method, req, springContext);
 
@@ -237,4 +237,31 @@ public class FrontController extends HttpServlet {
         return false;
     }
 
+    @SuppressWarnings("unchecked")
+    private Object getControllerInstance(
+            Class<?> controllerClass,
+            ServletContext context) throws ReflectiveOperationException {
+
+        Map<Class<?>, Object> controllersInstance = (Map<Class<?>, Object>) context.getAttribute("controllersInstance");
+
+        if (controllersInstance == null) {
+            throw new IllegalStateException(
+                    "LCSFW : la map 'controllersInstance' n'est pas initialisée.");
+        }
+
+        Object controller = controllersInstance.get(controllerClass);
+
+        if (controller == null) {
+            synchronized (controllersInstance) {
+                controller = controllersInstance.get(controllerClass);
+
+                if (controller == null) {
+                    controller = controllerClass.getDeclaredConstructor().newInstance();
+                    controllersInstance.put(controllerClass, controller);
+                }
+            }
+        }
+
+        return controller;
+    }
 }
