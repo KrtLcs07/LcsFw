@@ -60,6 +60,8 @@ public class FrontControllerListner implements ServletContextListener {
         context.setAttribute("lcsfw-session-user-name", userAttribute);
         context.setAttribute("lcsfw-session-role-name", roleAttribute);
 
+        context.setAttribute("controllersInstance", new HashMap<Class<?>, Object>());
+
     }
 
 }
